@@ -1,0 +1,47 @@
+stages:
+  - test
+  - build
+  - publish
+  - deploy
+
+variables:
+  POSTGRES_DB: mydatabase
+  POSTGRES_USER: mydatabaseuser
+  POSTGRES_PASSWORD: mydatabasepassword
+  DJANGO_SECRET_KEY: yoursecretkey
+
+# Test stage
+test:
+  stage: test
+  script:
+    - python -m pip install -r requirements.txt
+    - python manage.py test
+  only:
+    - branches  
+
+# Build Docker image stage
+build:
+  stage: build
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME .
+    - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+  only:
+    - master 
+
+# Publish to GitLab Container Registry stage
+publish:
+  stage: publish
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+  only:
+    - master  
+
+# Deploy stage
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploy your application here"
+  only:
+    - master  
